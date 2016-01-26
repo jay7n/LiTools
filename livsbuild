@@ -1,0 +1,92 @@
+#!/bin/bash
+
+LogFile=vsbuild_tmp
+LogPath=~/bin/$LogFile
+LogPathWin="D:\\home\\bin\\$LogFile"
+
+function usage() {
+    sep="awk 'BEGIN {FS=\":\"} {printf \"%s \t %s\\n\", \$1, \$2}'"
+
+    echo ""
+    echo "Usage: li3dsbuild [atv] sln_file"
+    echo ""
+    echo "Build a visual studio sln using devenv under Cygwin terminal"
+    echo ""
+    echo "-a action.:action is one of \"b|build\", \"r|rebuild\" or \"c|clean\""|eval $sep
+    echo "-t type.  :type is one of \"d64|d\", \"r64|r\""|eval $sep
+    echo "-v.       :print the underlying command before executed."|eval $sep
+}
+
+rm $LogPath 2> /dev/null
+touch $LogPath
+
+action_arg=""
+type_arg=""
+verbose_arg=false
+
+while getopts "a:t:v" options
+do
+    case ${options} in
+        a)
+            action_arg=$OPTARG   
+            ;;
+        t)
+            type_arg=$OPTARG   
+            ;;
+        v)
+            verbose_arg="true"
+            ;;
+    esac
+done
+
+Action=""
+if [ "$action_arg" == "build" ] || [ "$action_arg" == "b" ] || [ "$action_arg" == "" ]; then
+    Action="/Build"
+elif [ "$action_arg" == "rebuild" ] || [ "$action_arg" == "rebuild" ]; then
+    Action="/Rebuild"
+elif [ "$action_arg" == "clean" ] || [ "$action_arg" == "c" ]; then 
+    Action="/Clean"
+else
+    echo "$action_arg: error arg"
+    exit -1
+fi
+
+Type=""
+if [ "$type_arg" == "d64" ] || [ "$type_arg" == "d" ] || [ "$type_arg" == "" ]; then
+    Type="Debug|x64"
+elif [ "$type_arg" == "r64" ] || [ "$type_arg" == "r" ]; then
+    Type="Release|x64"
+else
+    echo "$type_arg: error arg"
+    exit -1
+fi
+
+#from http://stackoverflow.com/questions/11742996/shell-script-is-mixing-getopts-with-positional-parameters-possible
+Target=${@:$OPTIND:1}
+
+if [ "$Target" ==  "" ]; then
+    echo "error: expects a .sln target."
+    usage
+    exit -1
+elif [ ! -f "$Target" ]; then
+    echo "$Target: target doesn't exist."
+    usage
+    exit -1
+fi
+
+#echo "$Target $Action $Type"
+Command="devenv \"$Target\" \"$Action\" \"$Type\" /Out \"$LogPathWin\""
+
+if [ "$verbose_arg" == "true" ]; then
+    echo "okay. actually executing:"
+    echo "    $Command"
+
+fi
+
+eval $Command
+
+cat $LogPath|grep -E --color "error|warning|\([0-9]+\)"
+
+echo "build log is at path: $LogPath"
+
+exit 0

@@ -1,0 +1,40 @@
+#!/bin/bash
+
+GREP_RES=/tmp/lifigrep_res
+MAX_LINE_COUNT_WIHTOUT_LESS=20
+
+inverse_match="no"
+
+while getopts "v" options
+do
+    case ${options} in
+        v)
+            inverse_match="yes"
+            ;;
+
+    esac
+done
+
+#from http://stackoverflow.com/questions/11742996/shell-script-is-mixing-getopts-with-positional-parameters-possible
+path=${@:$OPTIND:1}
+file=${@:$OPTIND+1:1}
+pattern=${@:$OPTIND+2:1}
+
+
+if [ $inverse_match == "yes" ]; then
+    echo "$file"
+    find "$path" -not -name "*.tags" -not -name "$file" -exec grep --color=always -I -s -n -i -E "$pattern"  {} + > $GREP_RES
+else
+    find "$path" -not -name "*.tags" -name "$file" -exec grep --color=always -I -s -n -i -E "$pattern"  {} + > $GREP_RES
+fi
+
+declare -i lc=$(wc -l $GREP_RES | awk '{print $1}')
+
+if [ $lc -gt $MAX_LINE_COUNT_WIHTOUT_LESS ]; then
+    cat $GREP_RES | less -r
+else
+    cat $GREP_RES
+fi
+
+/bin/rm $GREP_RES
+
