@@ -3,30 +3,57 @@
 GREP_RES=/tmp/lifigrep_res
 MAX_LINE_COUNT_WIHTOUT_LESS=20
 
-inverse_match="no"
+wth_not_name=""
+inverse_grep=""
+pathes=()
+files=()
+regexps=()
 
-while getopts "v" options
+while getopts "nvp:f:r:" options
 do
     case ${options} in
+        n)
+            with_not_name="-not "
+            ;;
+        p)
+            pathes+="$OPTARG "
+            ;;
+        f)
+            files+="$OPTARG "
+            ;;
         v)
-            inverse_match="yes"
+            inverse_grep="-v "
+            ;;
+        r)
+            regexps+="$OPTARG "
             ;;
 
     esac
 done
 
 #from http://stackoverflow.com/questions/11742996/shell-script-is-mixing-getopts-with-positional-parameters-possible
-path=${@:$OPTIND:1}
-file=${@:$OPTIND+1:1}
-pattern=${@:$OPTIND+2:1}
+#path=${@:$OPTIND:1}
+#file=${@:$OPTIND+1:1}
+#pattern=${@:$OPTIND+2:1}
 
+test=${@:$OPTIND:1}
 
-if [ $inverse_match == "yes" ]; then
-    echo "$file"
-    find "$path" -not -name "*.tags" -not -name "$file" -exec grep --color=always -I -s -n -i -E "$pattern"  {} + > $GREP_RES
-else
-    find "$path" -not -name "*.tags" -name "$file" -exec grep --color=always -I -s -n -i -E "$pattern"  {} + > $GREP_RES
-fi
+find_names=""
+grep_patterns=""
+
+for i in ${files[@]}
+do
+    find_names+="${with_not_name}-name $i "
+done
+
+for i in ${regexps[@]}
+do
+    grep_patterns+="($i)|"
+done
+
+grep_patterns=`echo $grep_patterns|sed 's/.$//'`
+
+find ${pathes[@]} -not -name "*.tags" $find_names -exec grep --color=always -I -s -n -i $inverse_grep -E "$grep_patterns"  {} + > $GREP_RES
 
 declare -i lc=$(wc -l $GREP_RES | awk '{print $1}')
 
