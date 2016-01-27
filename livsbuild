@@ -78,13 +78,11 @@ elif [ ! -f "$Target" ]; then
     exit -1
 fi
 
-#echo "$Target $Action $Type"
 Command="devenv \"`eval cygpath -w \\\"$Target\\\"`\" \"$Action\" \"$Type\" /Out \"`eval cygpath -w \\\"$LogPath\\\"`\""
 eval $Command
 
 grep_pattern="\([0-9]+\).*error.*$"
 
-echo $with_warning
 if [ "$with_warning" == "true" ]; then
     grep_pattern=${grep_pattern}"|\([0-9]+\).*warning.*$"
 fi
