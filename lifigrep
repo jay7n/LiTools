@@ -3,7 +3,7 @@
 set -f 
 
 GREP_RES=/tmp/lifigrep_res
-MAX_LINE_COUNT_WIHTOUT_LESS=35
+MAX_LINE_COUNT_WIHTOUT_LESS=100
 
 arr_not_paths=()
 arr_paths=()
