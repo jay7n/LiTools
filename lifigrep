@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -f 
+set -f
 
 GREP_RES=/tmp/lifigrep_res
 MAX_LINE_COUNT_WIHTOUT_LESS=100
@@ -15,9 +15,10 @@ arr_regexps=()
 arr_not_regexps=()
 arr_exc_regexps=()
 
+grep_ignore_case=""
 verbose=""
 
-while getopts "P:p:F:f:R:r:e:v" options
+while getopts "P:p:F:f:R:r:e:vi" options
 do
     case ${options} in
         P)
@@ -41,8 +42,12 @@ do
         e)
             arr_exc_regexps+="$OPTARG "
             ;;
+        i)
+            grep_ignore_case="-i "
+            ;;
         v)
             verbose="true"
+            ;;
 
     esac
 done
@@ -101,15 +106,15 @@ arg_grep_exc_patterns=`echo $arg_grep_exc_patterns|sed 's/.$//'`
 find_path_name="find $arg_find_path \( $arg_find_name \)"
 exec_grep="-exec grep "
 if [ "$arg_grep_not_patterns" != "" ]; then
-    exec_grep+="-I -n -i -E \"$arg_grep_patterns\"  {} + "
-    exec_grep+="| grep -v -n -i -E \"$arg_grep_not_patterns\" "
-    exec_grep+="| grep --color=always -n -i -E \"$arg_grep_patterns\" "
+    exec_grep+="-I -n $grep_ignore_case -E \"$arg_grep_patterns\"  {} + "
+    exec_grep+="| grep -v -n $grep_ignore_case -E \"$arg_grep_not_patterns\" "
+    exec_grep+="| grep --color=always -n $grep_ignore_case -E \"$arg_grep_patterns\" "
 else
-    exec_grep+="--color=always -I -n -i -E \"$arg_grep_patterns\"  {} + "
+    exec_grep+="--color=always -I -n $grep_ignore_case -E \"$arg_grep_patterns\"  {} + "
 fi
 exec_grep+=">> $GREP_RES"
 
-exec_grep_exc="-exec grep --color=always -I -s -n -i -v -E \"$arg_grep_exc_patterns\"  {} + >> $GREP_RES"
+exec_grep_exc="-exec grep --color=always -I -s -n $grep_ignore_case -v -E \"$arg_grep_exc_patterns\"  {} + >> $GREP_RES"
 
 IFS_BK=$IFS
 IFS=""
@@ -129,6 +134,14 @@ fi
 
 cmd[3]="cat $GREP_RES; "
 
+if [ "$verbose" == "true" ]; then
+    echo "verbose commands:"
+    for c in ${cmd[@]}
+    do
+        printf "\t"
+        echo $c
+    done
+fi
 eval "${cmd[@]}"
 
 #declare -i lc=$(wc -l $GREP_RES | awk '{print $1}')
@@ -139,14 +152,6 @@ eval "${cmd[@]}"
 #    cat $GREP_RES
 #fi
 
-if [ "$verbose" == "true" ]; then
-    echo "verbose commands:"
-    for c in ${cmd[@]}
-    do
-        printf "\t"
-        echo $c
-    done
-fi
 
 IFS=$IFS_BK
 
