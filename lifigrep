@@ -5,8 +5,8 @@ set -f
 GREP_RES=/tmp/lifigrep_res
 MAX_LINE_COUNT_WIHTOUT_LESS=35
 
-arr_not_pathes=()
-arr_pathes=()
+arr_not_paths=()
+arr_paths=()
 
 arr_not_files=()
 arr_files=()
@@ -20,10 +20,10 @@ while getopts "P:p:F:f:R:r:v" options
 do
     case ${options} in
         P)
-            arr_not_pathes+="$OPTARG "
+            arr_not_paths+="$OPTARG "
             ;;
         p)
-            arr_pathes+="$OPTARG "
+            arr_paths+="$OPTARG "
             ;;
         F)
             arr_not_files+="$OPTARG "
@@ -53,12 +53,12 @@ arg_find_name=""
 arg_grep_patterns=""
 arg_grep_not_patterns=""
 
-for i in ${arr_pathes[@]}
+for i in ${arr_paths[@]}
 do
     arg_find_path+="$i "
 done
 
-for i in ${arr_not_pathes[@]}
+for i in ${arr_not_paths[@]}
 do
     arg_find_path+="! -path \"$i/*\" "
 done
@@ -67,12 +67,12 @@ for i in ${arr_files[@]}
 do
     arg_find_name+="-name \"$i\" -o "
 done
-arg_find_name=`echo $arg_find_name|sed 's/-o$//'`
 
 for i in ${arr_not_files[@]}
 do
-    arg_find_name+="-not -name \"$i\" -o "
+    arg_find_name+="! -name \"$i\" -o "
 done
+
 arg_find_name=`echo $arg_find_name|sed 's/-o$//'`
 
 for i in ${arr_regexps[@]}
