@@ -1,8 +1,7 @@
 #!/bin/bash
 
 LogFile=vsbuild_tmp
-LogPath=~/bin/$LogFile
-LogPathWin="D:\\home\\bin\\$LogFile"
+LogPath=/tmp/$LogFile
 
 function usage() {
     sep="awk 'BEGIN {FS=\":\"} {printf \"%s \t %s\\n\", \$1, \$2}'"
@@ -14,17 +13,19 @@ function usage() {
     echo ""
     echo "-a action.:action is one of \"b|build\", \"r|rebuild\" or \"c|clean\""|eval $sep
     echo "-t type.  :type is one of \"d64|d\", \"r64|r\""|eval $sep
-    echo "-v.       :print the underlying command before executed."|eval $sep
+    echo "-w.       :include warning info."|eval $sep
+    echo "-v.       :verbose. show the underlying commands executed."|eval $sep
 }
 
-rm $LogPath 2> /dev/null
+echo "" > $LogPath
 touch $LogPath
 
 action_arg=""
 type_arg=""
-verbose_arg=false
+verbose_arg="false"
+with_warning="false"
 
-while getopts "a:t:v" options
+while getopts "a:t:vw" options
 do
     case ${options} in
         a)
@@ -35,6 +36,9 @@ do
             ;;
         v)
             verbose_arg="true"
+            ;;
+        w)
+            with_warning="true"
             ;;
     esac
 done
@@ -75,17 +79,25 @@ elif [ ! -f "$Target" ]; then
 fi
 
 #echo "$Target $Action $Type"
-Command="devenv \"$Target\" \"$Action\" \"$Type\" /Out \"$LogPathWin\""
-
-if [ "$verbose_arg" == "true" ]; then
-    echo "okay. actually executing:"
-    echo "    $Command"
-
-fi
-
+Command="devenv \"`eval cygpath -w \\\"$Target\\\"`\" \"$Action\" \"$Type\" /Out \"`eval cygpath -w \\\"$LogPath\\\"`\""
 eval $Command
 
-cat $LogPath|grep -E --color "error|warning|\([0-9]+\)"
+grep_pattern="\([0-9]+\).*error.*$"
+
+echo $with_warning
+if [ "$with_warning" == "true" ]; then
+    grep_pattern=${grep_pattern}"|\([0-9]+\).*warning.*$"
+fi
+
+Catres="cat $LogPath | /bin/grep --color -E \"$grep_pattern\""
+eval $Catres
+
+if [ "$verbose_arg" == "true" ]; then
+    echo "verbose mode: the executed commands is"
+    echo "    $Command"
+    echo "    $Catres"
+
+fi
 
 echo "build log is at path: $LogPath"
 
