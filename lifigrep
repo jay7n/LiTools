@@ -13,10 +13,11 @@ arr_files=()
 
 arr_regexps=()
 arr_not_regexps=()
+arr_exc_regexps=()
 
 verbose=""
 
-while getopts "P:p:F:f:R:r:v" options
+while getopts "P:p:F:f:R:r:e:v" options
 do
     case ${options} in
         P)
@@ -37,6 +38,9 @@ do
         r)
             arr_regexps+="$OPTARG "
             ;;
+        e)
+            arr_exc_regexps+="$OPTARG "
+            ;;
         v)
             verbose="true"
 
@@ -52,6 +56,7 @@ arg_find_path=""
 arg_find_name=""
 arg_grep_patterns=""
 arg_grep_not_patterns=""
+arg_grep_exc_patterns=""
 
 for i in ${arr_paths[@]}
 do
@@ -67,13 +72,13 @@ for i in ${arr_files[@]}
 do
     arg_find_name+="-name \"$i\" -o "
 done
+arg_find_name=`echo $arg_find_name|sed 's/-o$/-a /'`
 
 for i in ${arr_not_files[@]}
 do
-    arg_find_name+="! -name \"$i\" -o "
+    arg_find_name+="! -name \"$i\" -a "
 done
-
-arg_find_name=`echo $arg_find_name|sed 's/-o$//'`
+arg_find_name=`echo $arg_find_name|sed 's/-a$//'`
 
 for i in ${arr_regexps[@]}
 do
@@ -87,9 +92,24 @@ do
 done
 arg_grep_not_patterns=`echo $arg_grep_not_patterns|sed 's/.$//'`
 
-find_grep="find $arg_find_path \( $arg_find_name \)"
-exec_grep="-exec grep --color=always -I -s -n -i -E \"$arg_grep_patterns\"  {} + >> $GREP_RES"
-exec_grep_not="-exec grep --color=always -I -s -n -i -v -E \"$arg_grep_not_patterns\"  {} + >> $GREP_RES"
+for i in ${arr_exc_regexps[@]}
+do
+    arg_grep_exc_patterns+="($i)|"
+done
+arg_grep_exc_patterns=`echo $arg_grep_exc_patterns|sed 's/.$//'`
+
+find_path_name="find $arg_find_path \( $arg_find_name \)"
+exec_grep="-exec grep "
+if [ "$arg_grep_not_patterns" != "" ]; then
+    exec_grep+="-I -n -i -E \"$arg_grep_patterns\"  {} + "
+    exec_grep+="| grep -v -n -i -E \"$arg_grep_not_patterns\" "
+    exec_grep+="| grep --color=always -n -i -E \"$arg_grep_patterns\" "
+else
+    exec_grep+="--color=always -I -n -i -E \"$arg_grep_patterns\"  {} + "
+fi
+exec_grep+=">> $GREP_RES"
+
+exec_grep_exc="-exec grep --color=always -I -s -n -i -v -E \"$arg_grep_exc_patterns\"  {} + >> $GREP_RES"
 
 IFS_BK=$IFS
 IFS=""
@@ -98,35 +118,33 @@ cmd=()
 cmd[0]="echo \"\" > $GREP_RES; "
 
 if [ "$arg_grep_patterns" != "" ]; then
-    cmd[1]="$find_grep $exec_grep; "
+    cmd[1]="$find_path_name $exec_grep; "
 else
-    cmd[1]="$find_grep; "
+    cmd[1]="$find_path_name; "
 fi
 
-if [ "$arg_grep_not_patterns" != "" ]; then
-    cmd[2]="$find_grep $exec_grep_not; "
+if [ "$arg_grep_exc_patterns" != "" ]; then
+    cmd[2]="$find_path_name $exec_grep_exc; "
 fi
+
+cmd[3]="cat $GREP_RES; "
 
 eval "${cmd[@]}"
 
+#declare -i lc=$(wc -l $GREP_RES | awk '{print $1}')
 
-declare -i lc=$(wc -l $GREP_RES | awk '{print $1}')
-
-if [ $lc -gt $MAX_LINE_COUNT_WIHTOUT_LESS ]; then
-    cat $GREP_RES | less -r
-else
-    cat $GREP_RES
-fi
-
-/bin/rm $GREP_RES
-
-
+#if [ $lc -gt $MAX_LINE_COUNT_WIHTOUT_LESS ]; then
+#    cat $GREP_RES | less -r
+#else
+#    cat $GREP_RES
+#fi
 
 if [ "$verbose" == "true" ]; then
     echo "verbose commands:"
     for c in ${cmd[@]}
     do
-        printf "\t$c\n"
+        printf "\t"
+        echo $c
     done
 fi
 
