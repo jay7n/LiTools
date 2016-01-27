@@ -1,59 +1,112 @@
 #!/bin/bash
 
+set -f 
+
 GREP_RES=/tmp/lifigrep_res
-MAX_LINE_COUNT_WIHTOUT_LESS=20
+MAX_LINE_COUNT_WIHTOUT_LESS=35
 
-wth_not_name=""
-inverse_grep=""
-pathes=()
-files=()
-regexps=()
+arr_not_pathes=()
+arr_pathes=()
 
-while getopts "nvp:f:r:" options
+arr_not_files=()
+arr_files=()
+
+arr_regexps=()
+arr_not_regexps=()
+
+verbose=""
+
+while getopts "P:p:F:f:R:r:v" options
 do
     case ${options} in
-        n)
-            with_not_name="-not "
+        P)
+            arr_not_pathes+="$OPTARG "
             ;;
         p)
-            pathes+="$OPTARG "
+            arr_pathes+="$OPTARG "
+            ;;
+        F)
+            arr_not_files+="$OPTARG "
             ;;
         f)
-            files+="$OPTARG "
+            arr_files+="$OPTARG "
             ;;
-        v)
-            inverse_grep="-v "
+        R)
+            arr_not_regexps+="$OPTARG "
             ;;
         r)
-            regexps+="$OPTARG "
+            arr_regexps+="$OPTARG "
             ;;
+        v)
+            verbose="true"
 
     esac
 done
 
 #from http://stackoverflow.com/questions/11742996/shell-script-is-mixing-getopts-with-positional-parameters-possible
-#path=${@:$OPTIND:1}
-#file=${@:$OPTIND+1:1}
-#pattern=${@:$OPTIND+2:1}
+    #path=${@:$OPTIND:1}
+    #file=${@:$OPTIND+1:1}
+    #pattern=${@:$OPTIND+2:1}
 
-test=${@:$OPTIND:1}
+arg_find_path=""
+arg_find_name=""
+arg_grep_patterns=""
+arg_grep_not_patterns=""
 
-find_names=""
-grep_patterns=""
-
-for i in ${files[@]}
+for i in ${arr_pathes[@]}
 do
-    find_names+="${with_not_name}-name $i "
+    arg_find_path+="$i "
 done
 
-for i in ${regexps[@]}
+for i in ${arr_not_pathes[@]}
 do
-    grep_patterns+="($i)|"
+    arg_find_path+="! -path \"$i/*\" "
 done
 
-grep_patterns=`echo $grep_patterns|sed 's/.$//'`
+for i in ${arr_files[@]}
+do
+    arg_find_name+="-name \"$i\" "
+done
 
-find ${pathes[@]} -not -name "*.tags" $find_names -exec grep --color=always -I -s -n -i $inverse_grep -E "$grep_patterns"  {} + > $GREP_RES
+for i in ${arr_not_files[@]}
+do
+    arg_find_name+="-not -name \"$i\" "
+done
+
+for i in ${arr_regexps[@]}
+do
+    arg_grep_patterns+="($i)|"
+done
+arg_grep_patterns=`echo $arg_grep_patterns|sed 's/.$//'`
+
+for i in ${arr_not_regexps[@]}
+do
+    arg_grep_not_patterns+="($i)|"
+done
+arg_grep_not_patterns=`echo $arg_grep_not_patterns|sed 's/.$//'`
+
+find_grep="find $arg_find_path $arg_find_name"
+exec_grep="-exec grep --color=always -I -s -n -i -E \"$arg_grep_patterns\"  {} + >> $GREP_RES"
+exec_grep_not="-exec grep --color=always -I -s -n -i -v -E \"$arg_grep_not_patterns\"  {} + >> $GREP_RES"
+
+IFS_BK=$IFS
+IFS=""
+
+cmd=()
+cmd[0]="echo \"\" > $GREP_RES; "
+
+if [ "$arg_grep_patterns" != "" ]; then
+    cmd[1]="$find_grep $exec_grep; "
+else
+    cmd[1]="$find_grep; "
+fi
+
+if [ "$arg_grep_not_patterns" != "" ]; then
+    cmd[2]="$find_grep $exec_grep_not; "
+fi
+
+eval "${cmd[@]}"
+
 
 declare -i lc=$(wc -l $GREP_RES | awk '{print $1}')
 
@@ -65,3 +118,16 @@ fi
 
 /bin/rm $GREP_RES
 
+
+
+if [ "$verbose" == "true" ]; then
+    echo "verbose commands:"
+    for c in ${cmd[@]}
+    do
+        printf "\t$c\n"
+    done
+fi
+
+IFS=$IFS_BK
+
+set +f
