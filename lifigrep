@@ -65,13 +65,15 @@ done
 
 for i in ${arr_files[@]}
 do
-    arg_find_name+="-name \"$i\" "
+    arg_find_name+="-name \"$i\" -o "
 done
+arg_find_name=`echo $arg_find_name|sed 's/-o$//'`
 
 for i in ${arr_not_files[@]}
 do
-    arg_find_name+="-not -name \"$i\" "
+    arg_find_name+="-not -name \"$i\" -o "
 done
+arg_find_name=`echo $arg_find_name|sed 's/-o$//'`
 
 for i in ${arr_regexps[@]}
 do
@@ -85,7 +87,7 @@ do
 done
 arg_grep_not_patterns=`echo $arg_grep_not_patterns|sed 's/.$//'`
 
-find_grep="find $arg_find_path $arg_find_name"
+find_grep="find $arg_find_path \( $arg_find_name \)"
 exec_grep="-exec grep --color=always -I -s -n -i -E \"$arg_grep_patterns\"  {} + >> $GREP_RES"
 exec_grep_not="-exec grep --color=always -I -s -n -i -v -E \"$arg_grep_not_patterns\"  {} + >> $GREP_RES"
 
