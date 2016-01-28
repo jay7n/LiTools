@@ -112,9 +112,11 @@ if [ "$arg_grep_not_patterns" != "" ]; then
 else
     exec_grep+="--color=always -I -n -s $grep_ignore_case -E \"$arg_grep_patterns\"  {} + "
 fi
-exec_grep+="> $GREP_RES"
 
 exec_grep_exc="-exec grep --color=always -I -n -s $grep_ignore_case -v -E \"$arg_grep_exc_patterns\"  {} + >> $GREP_RES"
+
+redirect_to_res="> $GREP_RES"
+append_to_res=">> $GREP_RES"
 
 IFS_BK=$IFS
 IFS=""
@@ -122,32 +124,41 @@ IFS=""
 cmd=()
 declare -i idx=0
 
-if [ "$arg_grep_patterns" != "" ]; then
-    cmd[$idx]="$find_path_name $exec_grep; "
-else
-    cmd[$idx]="$find_path_name; "
-fi
-((idx++))
+if [ "$arg_grep_patterns" != "" ] || [ "$arg_grep_exc_patterns" != "" ]; then
+    if [ "$arg_grep_patterns" != "" ]; then
+        cmd[$idx]="$find_path_name $exec_grep $redirect_to_res; "
+        ((idx++))
+    fi
 
-if [ "$arg_grep_exc_patterns" != "" ]; then
-    cmd[$idx]="$find_path_name $exec_grep_exc; "
+    if [ "$arg_grep_exc_patterns" != "" ]; then
+        cmd[$idx]="$find_path_name $exec_grep_exc "
+
+        if [ "$arg_grep_patterns" != "" ]; then
+            cmd[$idx]+="$append_to_res; "
+        else
+            cmd[$idx]+="$redirect_to_res; "
+        fi
+        ((idx++))
+    fi
+else
+    cmd[$idx]="$find_path_name $redirect_to_res; "
     ((idx++))
 fi
 
 cmd[$idx]="cat $GREP_RES; "
 ((idx++))
 
+eval "${cmd[@]}"
+
 if [ "$verbose" == "true" ]; then
+    printf "\n"
     echo "verbose commands:"
     for c in ${cmd[@]}
     do
         printf "\t"
         echo $c
     done
-    printf "\n"
 fi
-
-eval "${cmd[@]}"
 
 #declare -i lc=$(wc -l $GREP_RES | awk '{print $1}')
 
