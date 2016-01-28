@@ -1,0 +1,6 @@
+1>------ Build started: Project: MaxPythonHost, Configuration: Debug x64 ------
+1>  PyMXSContextExpr.cpp
+1>d:\home\3dsmax\develop\3dswin\src\maxplus\maxpythonhost\pymxscontextexpr.cpp(238): warning C4800: 'int': forcing value to bool 'true' or 'false' (performance warning)
+1>d:\home\3dsmax\develop\3dswin\src\maxplus\maxpythonhost\pymxscontextexpr.cpp(580): error C2065: 'teNode': undeclared identifier
+========== Build: 0 succeeded, 1 failed, 4 up-to-date, 0 skipped ==========
+
