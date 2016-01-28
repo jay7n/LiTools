@@ -114,7 +114,7 @@ else
 fi
 exec_grep+="> $GREP_RES"
 
-exec_grep_exc="-exec grep --color=always -I -n -s $grep_ignore_case -v -E \"$arg_grep_exc_patterns\"  {} + > $GREP_RES"
+exec_grep_exc="-exec grep --color=always -I -n -s $grep_ignore_case -v -E \"$arg_grep_exc_patterns\"  {} + >> $GREP_RES"
 
 IFS_BK=$IFS
 IFS=""
