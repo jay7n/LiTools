@@ -106,33 +106,36 @@ arg_grep_exc_patterns=`echo $arg_grep_exc_patterns|sed 's/.$//'`
 find_path_name="find $arg_find_path \( $arg_find_name \)"
 exec_grep="-exec grep "
 if [ "$arg_grep_not_patterns" != "" ]; then
-    exec_grep+="-I -n $grep_ignore_case -E \"$arg_grep_patterns\"  {} + "
-    exec_grep+="| grep -v -n $grep_ignore_case -E \"$arg_grep_not_patterns\" "
-    exec_grep+="| grep --color=always -n $grep_ignore_case -E \"$arg_grep_patterns\" "
+    exec_grep+="-I -n -s $grep_ignore_case -E \"$arg_grep_patterns\"  {} + "
+    exec_grep+="| grep -v -n -s $grep_ignore_case -E \"$arg_grep_not_patterns\" "
+    exec_grep+="| grep --color=always -n -s $grep_ignore_case -E \"$arg_grep_patterns\" "
 else
-    exec_grep+="--color=always -I -n $grep_ignore_case -E \"$arg_grep_patterns\"  {} + "
+    exec_grep+="--color=always -I -n -s $grep_ignore_case -E \"$arg_grep_patterns\"  {} + "
 fi
-exec_grep+=">> $GREP_RES"
+exec_grep+="> $GREP_RES"
 
-exec_grep_exc="-exec grep --color=always -I -s -n $grep_ignore_case -v -E \"$arg_grep_exc_patterns\"  {} + >> $GREP_RES"
+exec_grep_exc="-exec grep --color=always -I -n -s $grep_ignore_case -v -E \"$arg_grep_exc_patterns\"  {} + > $GREP_RES"
 
 IFS_BK=$IFS
 IFS=""
 
 cmd=()
-cmd[0]="echo \"\" > $GREP_RES; "
+declare -i idx=0
 
 if [ "$arg_grep_patterns" != "" ]; then
-    cmd[1]="$find_path_name $exec_grep; "
+    cmd[$idx]="$find_path_name $exec_grep; "
 else
-    cmd[1]="$find_path_name; "
+    cmd[$idx]="$find_path_name; "
 fi
+((idx++))
 
 if [ "$arg_grep_exc_patterns" != "" ]; then
-    cmd[2]="$find_path_name $exec_grep_exc; "
+    cmd[$idx]="$find_path_name $exec_grep_exc; "
+    ((idx++))
 fi
 
-cmd[3]="cat $GREP_RES; "
+cmd[$idx]="cat $GREP_RES; "
+((idx++))
 
 if [ "$verbose" == "true" ]; then
     echo "verbose commands:"
@@ -141,7 +144,9 @@ if [ "$verbose" == "true" ]; then
         printf "\t"
         echo $c
     done
+    printf "\n"
 fi
+
 eval "${cmd[@]}"
 
 #declare -i lc=$(wc -l $GREP_RES | awk '{print $1}')
