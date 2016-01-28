@@ -103,17 +103,27 @@ do
 done
 arg_grep_exc_patterns=`echo $arg_grep_exc_patterns|sed 's/.$//'`
 
-find_path_name="find $arg_find_path \( $arg_find_name \)"
-exec_grep="-exec grep "
-if [ "$arg_grep_not_patterns" != "" ]; then
-    exec_grep+="-I -n -s $grep_ignore_case -E \"$arg_grep_patterns\"  {} + "
-    exec_grep+="| grep -v -n -s $grep_ignore_case -E \"$arg_grep_not_patterns\" "
-    exec_grep+="| grep --color=always -n -s $grep_ignore_case -E \"$arg_grep_patterns\" "
-else
-    exec_grep+="--color=always -I -n -s $grep_ignore_case -E \"$arg_grep_patterns\"  {} + "
+if [ "$arg_find_path" == "" ]; then
+    arg_find_path="."    
 fi
 
-exec_grep_exc="-exec grep --color=always -I -n -s $grep_ignore_case -v -E \"$arg_grep_exc_patterns\"  {} + >> $GREP_RES"
+if [ "$arg_find_name" == "" ]; then
+    arg_find_name="-name \"*\""
+fi
+
+find_path_name="find $arg_find_path \( $arg_find_name \)"
+exec_grep="-exec grep "
+common_grep_args="-I -n -s -H"
+
+if [ "$arg_grep_not_patterns" != "" ]; then
+    exec_grep+="$common_grep_args $grep_ignore_case -E \"$arg_grep_patterns\"  {} + "
+    exec_grep+="| grep $common_grep_args $grep_ignore_case -E \"$arg_grep_not_patterns\" "
+    exec_grep+="| grep --color=always $common_grep_args $grep_ignore_case -E \"$arg_grep_patterns\" "
+else
+    exec_grep+="--color=always $common_grep_args $grep_ignore_case -E \"$arg_grep_patterns\"  {} + "
+fi
+
+exec_grep_exc="-exec grep --color=always $common_grep_args $grep_ignore_case -v -E \"$arg_grep_exc_patterns\"  {} + >> $GREP_RES"
 
 redirect_to_res="> $GREP_RES"
 append_to_res=">> $GREP_RES"
