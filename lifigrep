@@ -124,7 +124,7 @@ common_grep_args="-I -n -s -H"
 
 if [ "$arg_grep_not_patterns" != "" ]; then
     exec_grep+="$common_grep_args $grep_ignore_case -E \"$arg_grep_patterns\"  {} + "
-    exec_grep+="| grep $common_grep_args $grep_ignore_case -E \"$arg_grep_not_patterns\" "
+    exec_grep+="| grep $common_grep_args $grep_ignore_case -v -E \"$arg_grep_not_patterns\" "
     exec_grep+="| grep --color=always $common_grep_args $grep_ignore_case -E \"$arg_grep_patterns\" "
 else
     exec_grep+="--color=always $common_grep_args $grep_ignore_case -E \"$arg_grep_patterns\"  {} + "
