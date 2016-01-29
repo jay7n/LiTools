@@ -16,9 +16,11 @@ arr_not_regexps=()
 arr_exc_regexps=()
 
 grep_ignore_case=""
+find_name_ignore_case=""
+
 verbose=""
 
-while getopts "P:p:F:f:R:r:e:vi" options
+while getopts "P:p:F:f:R:r:e:viI" options
 do
     case ${options} in
         P)
@@ -45,6 +47,9 @@ do
         i)
             grep_ignore_case="-i "
             ;;
+        I)
+            find_name_ignore_case="i"
+            ;;
         v)
             verbose="true"
             ;;
@@ -59,6 +64,8 @@ done
 
 arg_find_path=""
 arg_find_name=""
+arg_find_name_arg="-${find_name_ignore_case}name"
+
 arg_grep_patterns=""
 arg_grep_not_patterns=""
 arg_grep_exc_patterns=""
@@ -75,13 +82,13 @@ done
 
 for i in ${arr_files[@]}
 do
-    arg_find_name+="-name \"$i\" -o "
+    arg_find_name+="$arg_find_name_arg \"$i\" -o "
 done
 arg_find_name=`echo $arg_find_name|sed 's/-o$/-a /'`
 
 for i in ${arr_not_files[@]}
 do
-    arg_find_name+="! -name \"$i\" -a "
+    arg_find_name+="! $arg_find_name_arg \"$i\" -a "
 done
 arg_find_name=`echo $arg_find_name|sed 's/-a$//'`
 
@@ -104,11 +111,11 @@ done
 arg_grep_exc_patterns=`echo $arg_grep_exc_patterns|sed 's/.$//'`
 
 if [ "$arg_find_path" == "" ]; then
-    arg_find_path="."    
+    arg_find_path="."
 fi
 
 if [ "$arg_find_name" == "" ]; then
-    arg_find_name="-name \"*\""
+    arg_find_name="$arg_find_name_arg \"*\""
 fi
 
 find_path_name="find $arg_find_path \( $arg_find_name \)"
