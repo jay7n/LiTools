@@ -46,7 +46,7 @@ done
 Action=""
 if [ "$action_arg" == "build" ] || [ "$action_arg" == "b" ] || [ "$action_arg" == "" ]; then
     Action="/Build"
-elif [ "$action_arg" == "rebuild" ] || [ "$action_arg" == "rebuild" ]; then
+elif [ "$action_arg" == "rebuild" ] || [ "$action_arg" == "r" ]; then
     Action="/Rebuild"
 elif [ "$action_arg" == "clean" ] || [ "$action_arg" == "c" ]; then 
     Action="/Clean"
