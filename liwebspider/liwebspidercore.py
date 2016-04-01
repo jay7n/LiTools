@@ -5,6 +5,7 @@ import urllib2
 import logging
 
 from bs4 import BeautifulSoup
+from bs4 import element
 
 import imgspiderconf as Config
 
@@ -36,7 +37,7 @@ class Spider(object):
                 con = urllib2.urlopen(req)
                 return con
             except Exception as e:
-                # if forbidden, try it [GrabHtmlContent_MaxTryCount] more times
+                # if forbidden, try it `Config.GrabHtmlContent['MaxTryCount']` more times
                 # TO BE CLEAR : what the hell 'user_agent' is for ?
                 return _request_content(random.sample('abcdefghijklmnopqrstuvwxyz', 10))
 
@@ -49,8 +50,34 @@ class Spider(object):
 
         return con.read()
 
-    def ContentParser(self, html_content):
-        HitTemplate = self.Config.HitTemplate['Element']
+    def _parseSoupRecursive(self, template_soup, html_soup):
+        for child in template_soup.children:
+            # if type(child) == element.NavigableString and child == u'\n':
+            #     continue
+            if type(child) == element.Tag:
+                tag_name = child.name
+                tag_attrs = child.attrs
+
+    def ParseContent(self, html_content):
+        hitTemplateElem = self.Config.HitTemplate['Element'][0]
+        templateSoup = BeautifulSoup(hitTemplateElem)
+        tempRootElem = templateSoup.body.contents[0]
+
+        def searching_helper_func(tag):
+            if not type(tag) == element.Tag:
+                return False
+
+            if not tag.name == tempRootElem.name:
+                return False
+
+            for att_key, att_value in tempRootElem.attrs.iteritems():
+                if not tag.has_attr(att_key) or not tag[att_key] == att_value:
+                    return False
+
+            return True
+
+        htmlSoup = BeautifulSoup(html_content)
+        _parseSoupRecursive(templateSoup, htmlSoup)
 
 
 def extract_elem_from_raw_tag(tag_row, tag_text, resize_image=False):

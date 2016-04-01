@@ -6,17 +6,19 @@ HitTemplate = {
     'Meta': '''
     ''',
 
-    'Element': '''
-        <ul class="mnlt">
-                <li class="left" id="imgshow">
-                    <p></p>
-                    <p>
-                        <img alt="$TEXT_1$" src="$IMG_1$" style="float:none;" title="$TEXT_2$">
-                    </p>
-                    <p></p>
-                </li>
-        </ul>
-    '''
+    'Element': [
+        '''
+            <ul class="mnlt">
+                    <li class="left" id="imgshow">
+                        <p></p>
+                        <p>
+                            <img alt="$TEXT_1$" src="$IMG_1$" style="float:none;" title="$TEXT_2$">
+                        </p>
+                        <p></p>
+                    </li>
+            </ul>
+        ''',
+    ]
 }
 
 Debug = {
