@@ -75,6 +75,10 @@ do
     arg_find_path+="$i "
 done
 
+if [ "$arg_find_path" == "" ]; then
+    arg_find_path=". "
+fi
+
 for i in ${arr_not_paths[@]}
 do
     arg_find_path+="! -path \"$i/*\" "
@@ -110,9 +114,6 @@ do
 done
 arg_grep_exc_patterns=`echo $arg_grep_exc_patterns|sed 's/.$//'`
 
-if [ "$arg_find_path" == "" ]; then
-    arg_find_path="."
-fi
 
 if [ "$arg_find_name" == "" ]; then
     arg_find_name="$arg_find_name_arg \"*\""
